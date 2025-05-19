@@ -27,7 +27,7 @@ jobs:
           terraform_version: latest
 
       - name: Set Working Directory
-        run: echo "WORKING_DIR=./environment/${{ inputs.environment }}" >> $GITHUB_ENV
+        run: echo "WORKING_DIR=./infra/environment/${{ inputs.environment }}" >> $GITHUB_ENV
 
       - name: Configure AWS Credentials (Access Keys)
         uses: aws-actions/configure-aws-credentials@v2
@@ -56,9 +56,9 @@ jobs:
       # Run Terraform commands using the dynamic directory set above
       - name: Terraform Init
         run: terraform init
-        working-directory: ./environment/${{ inputs.environment }}
+        working-directory: ./infra/environment/${{ inputs.environment }}
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve
-        working-directory: ./environment/${{ inputs.environment }}
+        working-directory: ./infra/environment/${{ inputs.environment }}
       
