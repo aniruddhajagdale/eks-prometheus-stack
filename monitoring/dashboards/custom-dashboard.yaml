@@ -1,0 +1,58 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Custom Dashboard",
+    "tags": [ "custom" ],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "uid": "random-uid",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Random Walk",
+        "type": "graph",
+        "datasource": null,
+        "fieldConfig": {
+          "defaults": {},
+          "overrides": []
+        },
+       "targets": [
+          {
+            "refId": "A",
+            "type": "randomWalk",
+            "datasource": "-- Grafana --"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": []
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 24,
+          "h": 10
+        }
+      }
+    ],
+    "templating": {
+      "list": []
+    },
+    "annotations": {
+      "list": []
+    },
+    "refresh": "5s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}
