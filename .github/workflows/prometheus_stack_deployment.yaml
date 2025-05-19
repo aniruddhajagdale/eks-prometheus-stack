@@ -1,4 +1,4 @@
-name: Provision EKS and deploy Prometheus and Grafana
+name: Deploy Prometheus and Grafana
 
 on:
   push:
