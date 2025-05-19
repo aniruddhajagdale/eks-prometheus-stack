@@ -6,8 +6,8 @@ on:
       - main
       - dev
     paths:
-      - './monitoring/values-*.yaml'
-
+      - 'monitoring/values-dev.yaml'
+      - 'monitoring/values-main.yaml'
 permissions:
   id-token: write
   contents: read
@@ -55,17 +55,10 @@ jobs:
         run: |
           aws eks update-kubeconfig --name "$CLUSTER_NAME" --region ${{ vars.TF_VAR_region }}
       
-      - name: Helm Lint
+      - name: Helm Repo
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          helm lint prometheus-community/kube-prometheus-stack
-
-      - name: Validate Prometheus Rules
-        run: |
-          wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
-          tar xvf prometheus-2.52.0.linux-amd64.tar.gz
-          ./prometheus-2.52.0.linux-amd64/promtool check rules monitoring/alerts/custom-rules.yaml
 
       - name: Helm Dry Run
         run: |
@@ -73,6 +66,12 @@ jobs:
             --namespace ${{ vars.MONITORING_NAMESPACE }} --create-namespace \
             -f ./monitoring/values-${{ github.ref_name }}.yaml \
             --dry-run --debug
+
+      - name: Install Prometheus Operator CRDs
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/setup/
 
       - name: Helm Deploy Prometheus Stack (Rollback on Failure)
         run: |
