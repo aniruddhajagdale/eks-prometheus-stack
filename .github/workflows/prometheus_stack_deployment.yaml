@@ -6,7 +6,7 @@ on:
       - main
       - dev
     paths:
-      - '**.values-*.yaml'
+      - './values-*.yaml'
 
 permissions:
   id-token: write
