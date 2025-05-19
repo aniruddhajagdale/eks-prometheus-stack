@@ -59,13 +59,19 @@ jobs:
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          
+
       - name: Helm Dry Run
         run: |
           helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
             --namespace ${{ vars.MONITORING_NAMESPACE }} --create-namespace \
             -f ./monitoring/values-${{ github.ref_name }}.yaml \
             --dry-run --debug
+
+      - name: Install Prometheus Operator CRDs
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          kubectl apply -f https://raw.githubusercontent.com/prometheus-operator/kube-prometheus/main/manifests/setup/
 
       - name: Helm Deploy Prometheus Stack (Rollback on Failure)
         run: |
