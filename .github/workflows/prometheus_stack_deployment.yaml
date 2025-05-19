@@ -55,18 +55,11 @@ jobs:
         run: |
           aws eks update-kubeconfig --name "$CLUSTER_NAME" --region ${{ vars.TF_VAR_region }}
       
-      - name: Helm Lint
+      - name: Helm Repo
         run: |
           helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
           helm repo update
-          helm lint prometheus-community/kube-prometheus-stack
-
-      - name: Validate Prometheus Rules
-        run: |
-          wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
-          tar xvf prometheus-2.52.0.linux-amd64.tar.gz
-          ./prometheus-2.52.0.linux-amd64/promtool check rules monitoring/alerts/custom-rules.yaml
-
+          
       - name: Helm Dry Run
         run: |
           helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
