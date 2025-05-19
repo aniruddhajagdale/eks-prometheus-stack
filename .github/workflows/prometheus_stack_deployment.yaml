@@ -1,0 +1,98 @@
+name: Provision EKS and deploy Prometheus and Grafana
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+    paths:
+      - '**.values-*.yaml'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  eks_prometheus_deployment:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'prod' || 'dev' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+        # Authenticate using AWS Credentials
+      - name: Configure AWS Credentials (Access Keys)
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.TF_VAR_region }}
+          
+      - name: Verify identity
+        run: aws sts get-caller-identity
+
+      # Set Environment-Specific Variables (from GitHub Secrets or Environments)
+      - name: Set Variables
+        run: |
+          echo 'TF_VAR_env=${{ vars.TF_VAR_env }}' >> $GITHUB_ENV
+          echo 'CLUSTER_NAME=${{ vars.CLUSTER_NAME }}' >> $GITHUB_ENV
+          echo 'TF_VAR_region=${{ vars.TF_VAR_region }}' >> $GITHUB_ENV
+    
+      # Install kubectl on the runner 
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: latest
+      
+      # Install Helm on the runner 
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: latest
+  
+      - name: Update kube-config
+        run: |
+          aws eks update-kubeconfig --name "$CLUSTER_NAME" --region ${{ vars.TF_VAR_region }}
+      
+      - name: Helm Lint
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo update
+          helm lint prometheus-community/kube-prometheus-stack
+
+      - name: Validate Prometheus Rules
+        run: |
+          wget https://github.com/prometheus/prometheus/releases/download/v2.52.0/prometheus-2.52.0.linux-amd64.tar.gz
+          tar xvf prometheus-2.52.0.linux-amd64.tar.gz
+          ./prometheus-2.52.0.linux-amd64/promtool check rules monitoring/alerts/custom-rules.yaml
+
+      - name: Helm Dry Run
+        run: |
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+            --namespace ${{ vars.MONITORING_NAMESPACE }} --create-namespace \
+            -f values-${{ github.ref_name }}.yaml \
+            --dry-run --debug
+
+      - name: Helm Deploy Prometheus Stack (Rollback on Failure)
+        run: |
+          set -e
+
+          helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
+            --namespace ${{ vars.MONITORING_NAMESPACE }} --create-namespace \
+            -f values-${{ github.ref_name }}.yaml \
+            --wait --timeout 10m || FAILED=true
+
+          if [ "$FAILED" = true ]; then
+            echo "⚠️ Helm upgrade failed. Attempting rollback..."
+            helm rollback prometheus --namespace ${{ vars.MONITORING_NAMESPACE }} || echo "⚠️ Rollback failed too. Manual intervention required."
+            exit 1
+          fi
+      - name: Helm Release History
+        run: |
+          helm history prometheus --namespace ${{ vars.MONITORING_NAMESPACE }}
+
+      - name: Smoke Test - Monitoring Pods
+        run: |
+          kubectl get pods -n ${{ vars.MONITORING_NAMESPACE }}
+          kubectl get svc -n ${{ vars.MONITORING_NAMESPACE }}

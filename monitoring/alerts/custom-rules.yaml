@@ -1,0 +1,10 @@
+groups:
+- name: custom.rules
+  rules:
+  - alert: HighPodMemoryUsage
+    expr: sum(container_memory_usage_bytes{container!="",namespace="default"}) > 1e+09
+    for: 2m
+    labels:
+      severity: warning
+    annotations:
+      summary: High memory usage in default namespace
