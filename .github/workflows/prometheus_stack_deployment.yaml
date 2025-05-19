@@ -6,8 +6,8 @@ on:
       - main
       - dev
     paths:
-      - './monitoring/values-*.yaml'
-
+      - 'monitoring/values-dev.yaml'
+      - 'monitoring/values-main.yaml'
 permissions:
   id-token: write
   contents: read
