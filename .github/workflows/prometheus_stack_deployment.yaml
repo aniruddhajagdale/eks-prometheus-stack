@@ -81,7 +81,7 @@ jobs:
           helm upgrade --install prometheus prometheus-community/kube-prometheus-stack \
             --namespace ${{ vars.MONITORING_NAMESPACE }} --create-namespace \
             -f values-${{ github.ref_name }}.yaml \
-            --wait --timeout 10m || FAILED=true
+            --wait --timeout 5m || FAILED=true
 
           if [ "$FAILED" = true ]; then
             echo "⚠️ Helm upgrade failed. Attempting rollback..."
