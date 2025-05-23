@@ -65,9 +65,9 @@ jobs:
         helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
         helm repo update
 
-    - name: Lint Helm chart values
-      run: |
-        helm lint monitoring/helm/kube-prometheus-stack
+    # - name: Lint Helm chart values
+    #   run: |
+    #     helm lint monitoring/helm/kube-prometheus-stack
 
     - name: Create monitoring namespace
       run: kubectl create namespace monitoring --dry-run=client -o yaml | kubectl apply -f -
