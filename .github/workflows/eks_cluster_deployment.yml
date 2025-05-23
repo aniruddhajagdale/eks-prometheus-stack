@@ -8,6 +8,17 @@ on:
     paths:
       - '**.tf'
 
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment provision EKS Cluster'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - prod
+          - dev
+          
 permissions:
   id-token: write
   contents: read
