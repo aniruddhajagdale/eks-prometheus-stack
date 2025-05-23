@@ -40,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "eks_service_policy" {
 
 #EKS CLuster
 resource "aws_eks_cluster" "eks_cluster" {
-  name     = "${var.cluster_name}-cluster"
+  name     = "${var.cluster_name}-cluster-${var.env}"
   role_arn = aws_iam_role.eks_cluster_role.arn
   version  = var.k8_version
 
@@ -50,7 +50,7 @@ resource "aws_eks_cluster" "eks_cluster" {
     endpoint_public_access  = true
   }
   tags = {
-    Name        = "${var.cluster_name}-cluster"
+    Name        = "${var.cluster_name}-cluster-${var.env}"
     Environment = var.env
   }
 

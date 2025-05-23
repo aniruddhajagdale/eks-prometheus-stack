@@ -1,0 +1,33 @@
+- name: Load Email config
+  id: email_config
+  run: |
+    smtp_server=$(yq e '.smtp_server' alerts/email.yaml)
+    smtp_port=$(yq e '.smtp_port' alerts/email.yaml)
+    username_secret=$(yq e '.username_secret' alerts/email.yaml)
+    password_secret=$(yq e '.password_secret' alerts/email.yaml)
+    from_address=$(yq e '.from_address' alerts/email.yaml)
+    to_secret=$(yq e '.to_address_secret' alerts/email.yaml)
+    subject=$(yq e '.subject' alerts/email.yaml)
+    body=$(yq e '.body_template' alerts/email.yaml)
+
+    echo "SMTP_SERVER=$smtp_server" >> $GITHUB_ENV
+    echo "SMTP_PORT=$smtp_port" >> $GITHUB_ENV
+    echo "EMAIL_USERNAME_SECRET=$username_secret" >> $GITHUB_ENV
+    echo "EMAIL_PASSWORD_SECRET=$password_secret" >> $GITHUB_ENV
+    echo "EMAIL_FROM=$from_address" >> $GITHUB_ENV
+    echo "EMAIL_TO_SECRET=$to_secret" >> $GITHUB_ENV
+    echo "EMAIL_SUBJECT=$subject" >> $GITHUB_ENV
+    echo "EMAIL_BODY=$body" >> $GITHUB_ENV
+
+- name: Send Email notification on failure
+  if: failure()
+  uses: dawidd6/action-send-mail@v3
+  with:
+    server_address: ${{ env.SMTP_SERVER }}
+    server_port: ${{ env.SMTP_PORT }}
+    username: ${{ secrets[env.EMAIL_USERNAME_SECRET] }}
+    password: ${{ secrets[env.EMAIL_PASSWORD_SECRET] }}
+    subject: ${{ env.EMAIL_SUBJECT }}
+    to: ${{ secrets[env.EMAIL_TO_SECRET] }}
+    from: ${{ env.EMAIL_FROM }}
+    body: ${{ env.EMAIL_BODY }}
