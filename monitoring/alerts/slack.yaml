@@ -1,0 +1,21 @@
+- name: Install yq
+  run: sudo snap install yq
+
+- name: Load Slack config
+  id: slack_config
+  run: |
+    webhook_secret=$(yq e '.webhook_url_secret' alerts/slack.yaml)
+    message=$(yq e '.message_template' alerts/slack.yaml)
+    echo "WEBHOOK_SECRET=$webhook_secret" >> $GITHUB_ENV
+    echo "SLACK_MESSAGE=$message" >> $GITHUB_ENV
+
+- name: Notify Slack on failure
+  if: failure()
+  uses: slackapi/slack-github-action@v1.23.0
+  with:
+    payload: |
+      {
+        "text": "${{ env.SLACK_MESSAGE }}"
+      }
+  env:
+    SLACK_WEBHOOK_URL: ${{ secrets[env.WEBHOOK_SECRET] }}

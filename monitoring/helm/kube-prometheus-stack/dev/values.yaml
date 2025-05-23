@@ -1,0 +1,62 @@
+grafana:
+  enabled: true
+  admin:
+    existingSecret: grafana-admin-secret
+  service:
+    type: LoadBalancer
+    port: 80
+  ingress:
+    enabled: false
+  sidecar:
+    dashboards:
+      enabled: true
+    datasources:
+      enabled: true
+  persistence:
+    enabled: true
+    size: 5Gi
+    accessModes:
+      - ReadWriteOnce
+
+prometheus:
+  prometheusSpec:
+    serviceMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelectorNilUsesHelmValues: false
+    ruleSelectorNilUsesHelmValues: false
+    retention: 7d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 8Gi
+
+alertmanager:
+  enabled: true
+  alertmanagerSpec:
+    replicas: 1
+    storage:
+      volumeClaimTemplate:
+        spec:
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+rbac:
+  create: true
+
+serviceAccounts:
+  alertmanager:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/irsa-alertmanager
+  prometheus:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/irsa-prometheus
+  grafana:
+    create: true
+    annotations:
+      eks.amazonaws.com/role-arn: arn:aws:iam::<account-id>:role/irsa-grafana

@@ -1,0 +1,48 @@
+name: Manual Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment to roll back (e.g., dev, prod)'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - prod
+          - dev
+
+jobs:
+  manual-rollback:
+    runs-on: ubuntu-latest
+
+    env:
+      ENV: ${{ github.event.inputs.environment }}
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: GitHubActions
+
+      - name: Set kubeconfig for ${{ env.ENV }}
+        run: |
+          aws eks update-kubeconfig --name my-eks-${{ env.ENV }} --region us-east-1
+
+      - name: Show current Helm release history
+        run: helm history prometheus-stack -n monitoring
+
+      - name: Rollback to previous revision
+        run: helm rollback prometheus-stack 1 -n monitoring
+
+      - name: Notify Slack (manual rollback)
+        if: always()
+        run: ./scripts/notify_slack_manual_rollback.sh ${{ env.ENV }}
