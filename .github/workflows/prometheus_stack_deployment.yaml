@@ -104,14 +104,24 @@ jobs:
       id: helm_deploy
       run: |
         set -e
+
         if ! helm upgrade --install prometheus-stack prometheus-community/kube-prometheus-stack \
             --namespace monitoring \
             --values monitoring/helm/kube-prometheus-stack/${{ github.event.inputs.environment }}/values.yaml \
-            --wait --timeout 10m; then
-          echo "Helm upgrade failed, rolling back..."
-          helm rollback prometheus-stack --namespace monitoring
+            --wait --timeout 20m; then
+              echo "Helm upgrade failed."
+
+          # Check if release exists
+          if helm status prometheus-stack --namespace monitoring > /dev/null 2>&1; then
+            echo "Rolling back release prometheus-stack..."
+            helm rollback prometheus-stack --namespace monitoring
+          else
+            echo "No previous release found to rollback."
+          fi
+
           exit 1
         fi
+
 
     - name: Notify Slack on failure
       if: failure()
