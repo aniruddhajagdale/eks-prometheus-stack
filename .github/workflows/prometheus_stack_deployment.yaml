@@ -86,7 +86,7 @@ jobs:
       uses: aquasecurity/trivy-action@master
       with:
         scan-type: config
-        scan-ref: helm/kube-prometheus-stack/${{ github.event.inputs.environment }}
+        scan-ref: helm/kube-prometheus-stack
         exit-code: 1
     
       ##  Pre-deployment stage(Promtool) that focuses on configuration
